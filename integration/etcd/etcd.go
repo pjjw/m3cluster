@@ -64,7 +64,7 @@ func New(opts Options) (EmbeddedKV, error) {
 }
 
 func (e *embeddedKV) Close() error {
-	var multi errors.MultiError
+	var multi xerrors.MultiError
 
 	// see if there's any errors
 	select {

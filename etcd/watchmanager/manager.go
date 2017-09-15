@@ -53,7 +53,7 @@ func NewWatchManager(opts Options) (WatchManager, error) {
 
 type manager struct {
 	opts   Options
-	logger log.Logger
+	logger xlog.Logger
 	m      metrics
 
 	updateFn      UpdateFn

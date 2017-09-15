@@ -21,15 +21,15 @@ type Options interface {
 	ValidateFn() ValidateFn
 
 	// SetLogger sets the logger.
-	SetLogger(val log.Logger) Options
+	SetLogger(val xlog.Logger) Options
 
 	// Logger returns the logger.
-	Logger() log.Logger
+	Logger() xlog.Logger
 }
 
 type options struct {
 	validateFn ValidateFn
-	logger     log.Logger
+	logger     xlog.Logger
 }
 
 // NewOptions returns a new set of options for kv utility functions.
@@ -47,12 +47,12 @@ func (o *options) ValidateFn() ValidateFn {
 	return o.validateFn
 }
 
-func (o *options) SetLogger(val log.Logger) Options {
+func (o *options) SetLogger(val xlog.Logger) Options {
 	opts := *o
 	opts.logger = val
 	return &opts
 }
 
-func (o *options) Logger() log.Logger {
+func (o *options) Logger() xlog.Logger {
 	return o.logger
 }

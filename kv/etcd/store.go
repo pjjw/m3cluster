@@ -27,14 +27,13 @@ import (
 	"os"
 	"sync"
 
-	"github.com/m3db/m3cluster/etcd/watchmanager"
-	"github.com/m3db/m3cluster/kv"
-	xerrors "github.com/m3db/m3x/errors"
-	"github.com/m3db/m3x/log"
-	"github.com/m3db/m3x/retry"
-
 	"github.com/coreos/etcd/clientv3"
 	"github.com/golang/protobuf/proto"
+	"github.com/m3db/m3cluster/etcd/watchmanager"
+	"github.com/m3db/m3cluster/kv"
+	"github.com/m3db/m3x/errors"
+	"github.com/m3db/m3x/log"
+	"github.com/m3db/m3x/retry"
 	"github.com/uber-go/tally"
 	"golang.org/x/net/context"
 )
@@ -58,7 +57,7 @@ func NewStore(etcdKV clientv3.KV, etcdWatcher clientv3.Watcher, opts Options) (k
 		kv:             etcdKV,
 		watcher:        etcdWatcher,
 		watchables:     map[string]kv.ValueWatchable{},
-		retrier:        retry.NewRetrier(opts.RetryOptions()),
+		retrier:        xretry.NewRetrier(opts.RetryOptions()),
 		logger:         opts.InstrumentsOptions().Logger(),
 		cacheFile:      opts.CacheFileFn()(opts.Prefix()),
 		cache:          newCache(),
@@ -105,7 +104,7 @@ func NewStore(etcdKV clientv3.KV, etcdWatcher clientv3.Watcher, opts Options) (k
 			for range store.cacheUpdatedCh {
 				if err := store.writeCacheToFile(); err != nil {
 					store.logger.
-						WithFields(log.NewErrField(err)).
+						WithFields(xlog.NewLogErrField(err)).
 						Error("failed to write cache file")
 				}
 			}
@@ -121,8 +120,8 @@ type client struct {
 	kv             clientv3.KV
 	watcher        clientv3.Watcher
 	watchables     map[string]kv.ValueWatchable
-	retrier        retry.Retrier
-	logger         log.Logger
+	retrier        xretry.Retrier
+	logger         xlog.Logger
 	m              clientMetrics
 	cache          *valueCache
 	cacheFile      string
@@ -369,7 +368,7 @@ func (c *client) getFromKVStore(key string) (kv.Value, error) {
 		nv, err = c.get(key)
 		if err == kv.ErrNotFound {
 			// do not retry on ErrNotFound
-			return retry.NonRetryableError(err)
+			return xretry.NonRetryableError(err)
 		}
 		return err
 	}); execErr != nil && xerrors.GetInnerNonRetryableError(execErr) != kv.ErrNotFound {

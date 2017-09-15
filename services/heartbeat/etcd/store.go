@@ -63,11 +63,11 @@ func NewStore(c *clientv3.Client, opts Options) (services.HeartbeatService, erro
 
 	store := &client{
 		cache:      newLeaseCache(),
-		watchables: make(map[string]watch.Watchable),
+		watchables: make(map[string]xwatch.Watchable),
 		opts:       opts,
 		sid:        opts.ServiceID(),
 		logger:     opts.InstrumentsOptions().Logger(),
-		retrier:    retry.NewRetrier(opts.RetryOptions()),
+		retrier:    xretry.NewRetrier(opts.RetryOptions()),
 		m: clientMetrics{
 			etcdGetError:   scope.Counter("etcd-get-error"),
 			etcdPutError:   scope.Counter("etcd-put-error"),
@@ -112,11 +112,11 @@ type client struct {
 	sync.RWMutex
 
 	cache      *leaseCache
-	watchables map[string]watch.Watchable
+	watchables map[string]xwatch.Watchable
 	opts       Options
 	sid        services.ServiceID
-	logger     log.Logger
-	retrier    retry.Retrier
+	logger     xlog.Logger
+	retrier    xretry.Retrier
 	m          clientMetrics
 
 	l       clientv3.Lease
@@ -259,13 +259,13 @@ func (c *client) Delete(instance string) error {
 	return nil
 }
 
-func (c *client) Watch() (watch.Watch, error) {
+func (c *client) Watch() (xwatch.Watch, error) {
 	serviceKey := servicePrefix(c.sid)
 
 	c.Lock()
 	watchable, ok := c.watchables[serviceKey]
 	if !ok {
-		watchable = watch.NewWatchable()
+		watchable = xwatch.NewWatchable()
 		c.watchables[serviceKey] = watchable
 
 		go c.wm.Watch(serviceKey)
@@ -287,7 +287,7 @@ func (c *client) update(key string, _ []*clientv3.Event) error {
 		newValue, err = c.get(key)
 		if err == kv.ErrNotFound {
 			// do not retry on ErrNotFound
-			return retry.NonRetryableError(err)
+			return xretry.NonRetryableError(err)
 		}
 		return err
 	}); execErr != nil {

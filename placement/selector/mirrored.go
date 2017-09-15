@@ -36,7 +36,7 @@ var (
 
 type mirroredFilter struct {
 	opts   placement.Options
-	logger log.Logger
+	logger xlog.Logger
 }
 
 func newMirroredSelector(opts placement.Options) placement.InstanceSelector {

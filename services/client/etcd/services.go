@@ -74,7 +74,7 @@ type client struct {
 	hbStores       map[string]services.HeartbeatService
 	ldSvcs         map[leaderKey]services.LeaderService
 	adDoneChs      map[string]chan struct{}
-	logger         log.Logger
+	logger         xlog.Logger
 	m              tally.Scope
 }
 
@@ -251,7 +251,7 @@ func (c *client) Query(sid services.ServiceID, opts services.QueryOptions) (serv
 	return service, nil
 }
 
-func (c *client) Watch(sid services.ServiceID, opts services.QueryOptions) (watch.Watch, error) {
+func (c *client) Watch(sid services.ServiceID, opts services.QueryOptions) (xwatch.Watch, error) {
 	if err := validateServiceID(sid); err != nil {
 		return nil, err
 	}
@@ -304,7 +304,7 @@ func (c *client) Watch(sid services.ServiceID, opts services.QueryOptions) (watc
 		return w, err
 	}
 
-	watchable = watch.NewWatchable()
+	watchable = xwatch.NewWatchable()
 	sdm := newServiceDiscoveryMetrics(c.serviceTaggedScope(sid))
 
 	if !opts.IncludeUnhealthy() {
@@ -421,7 +421,7 @@ func (c *client) getKVManager(zone string) (*kvManager, error) {
 
 	m = &kvManager{
 		kv:                kv,
-		serviceWatchables: map[string]watch.Watchable{},
+		serviceWatchables: map[string]xwatch.Watchable{},
 	}
 
 	c.kvManagers[zone] = m
@@ -429,7 +429,7 @@ func (c *client) getKVManager(zone string) (*kvManager, error) {
 }
 
 func (c *client) watchPlacement(
-	w watch.Watchable,
+	w xwatch.Watchable,
 	vw kv.ValueWatch,
 	initValue kv.Value,
 	sid services.ServiceID,
@@ -446,9 +446,9 @@ func (c *client) watchPlacement(
 }
 
 func (c *client) watchPlacementAndHeartbeat(
-	w watch.Watchable,
+	w xwatch.Watchable,
 	vw kv.ValueWatch,
-	heartbeatWatch watch.Watch,
+	heartbeatWatch xwatch.Watch,
 	initValue kv.Value,
 	sid services.ServiceID,
 	service services.Service,
@@ -535,7 +535,7 @@ func filterInstances(s services.Service, ids []string) services.Service {
 		SetReplication(s.Replication())
 }
 
-func filterInstancesWithWatch(s services.Service, hbw watch.Watch) services.Service {
+func filterInstancesWithWatch(s services.Service, hbw xwatch.Watch) services.Service {
 	if hbw.Get() == nil {
 		return s
 	}
@@ -605,7 +605,7 @@ type kvManager struct {
 	sync.RWMutex
 
 	kv                kv.Store
-	serviceWatchables map[string]watch.Watchable
+	serviceWatchables map[string]xwatch.Watchable
 }
 
 func newServiceDiscoveryMetrics(m tally.Scope) serviceDiscoveryMetrics {
